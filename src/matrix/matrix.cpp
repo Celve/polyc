@@ -1,21 +1,6 @@
 #include <iostream>
 #include <matrix/matrix.h>
 
-Matrix::Matrix(osl_relation_p ptr) {
-  row_num = ptr->nb_rows;
-  col_num = ptr->nb_columns;
-  std::cout << ptr->nb_rows << " " << ptr->nb_columns << " "
-            << ptr->nb_parameters << " " << ptr->nb_input_dims << " "
-            << ptr->nb_output_dims << std::endl;
-  data.resize(row_num);
-  for (int i = 0; i < row_num; i++) {
-    data[i].resize(col_num);
-    for (int j = 0; j < col_num; j++) {
-      data[i][j] = OslIntRead(ptr->m[i][j], ptr->precision);
-    }
-  }
-}
-
 Matrix::Matrix(int row, int col) {
   this->row_num = row;
   this->col_num = col;

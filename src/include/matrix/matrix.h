@@ -10,13 +10,6 @@ class Phantom;
 class Matrix {
 public:
   /**
-   * @brief Construct a new Matrix object from osl_relation_p
-   *
-   * @param ptr
-   */
-  Matrix(osl_relation_p ptr);
-
-  /**
    * @brief Construct a empty Matrix object
    *
    * @param row

@@ -1,7 +1,7 @@
-#include <matrix/scattering.h>
+#include <matrix/relation.h>
 #include <osl/int.h>
 
-Scattering::Scattering(osl_relation_p ptr)
+Relation::Relation(osl_relation_p ptr)
     : ei(ptr->nb_rows, 1), output(ptr->nb_rows, ptr->nb_output_dims),
       param(ptr->nb_rows, ptr->nb_parameters),
       input(ptr->nb_rows, ptr->nb_input_dims), one(ptr->nb_rows, 1), ptr(ptr),
@@ -40,7 +40,7 @@ Scattering::Scattering(osl_relation_p ptr)
   }
 }
 
-void Scattering::WriteBack() {
+void Relation::WriteBack() {
   // free the original
   // now, here is a memory leak because I don't know how to free it
 
@@ -97,14 +97,14 @@ void Scattering::WriteBack() {
   }
 }
 
-int Scattering::GetRowNum() { return row_num; }
+int Relation::GetRowNum() { return row_num; }
 
-int Scattering::GetColNum() {
+int Relation::GetColNum() {
   return ei.GetColNum() + output.GetColNum() + param.GetColNum() +
          input.GetColNum() + one.GetColNum();
 }
 
-int Scattering::GetData(int row, int col) {
+int Relation::GetData(int row, int col) {
   if (col < ei.GetColNum()) {
     return ei.GetData(row, col);
   } else if (col < ei.GetColNum() + output.GetColNum()) {
@@ -120,7 +120,7 @@ int Scattering::GetData(int row, int col) {
   }
 }
 
-void Scattering::SetData(int row, int col, int value) {
+void Relation::SetData(int row, int col, int value) {
   if (col < ei.GetColNum()) {
     ei.SetData(row, col, value);
   } else if (col < ei.GetColNum() + output.GetColNum()) {
@@ -137,11 +137,11 @@ void Scattering::SetData(int row, int col, int value) {
   }
 }
 
-int Scattering::GetRowLast(int row) { return one.GetRowLast(row); }
+int Relation::GetRowLast(int row) { return one.GetRowLast(row); }
 
-void Scattering::SetRowLast(int row, int value) { one.SetRowLast(row, value); }
+void Relation::SetRowLast(int row, int value) { one.SetRowLast(row, value); }
 
-void Scattering::InsertEmptyRowAt(int pos) {
+void Relation::InsertEmptyRowAt(int pos) {
   ei.InsertEmptyRowAt(pos);
   output.InsertEmptyRowAt(pos);
   param.InsertEmptyRowAt(pos);
@@ -150,7 +150,7 @@ void Scattering::InsertEmptyRowAt(int pos) {
   row_num++;
 }
 
-bool Scattering::operator==(const std::vector<int> &stmt_id) const {
+bool Relation::operator==(const std::vector<int> &stmt_id) const {
   // check the branches of the AST
   for (int i = 0; i < stmt_id.size() && i * 2 < one.GetRowNum(); i++) {
     if (one.GetRowLast(i * 2) != stmt_id[i]) {
@@ -163,7 +163,7 @@ bool Scattering::operator==(const std::vector<int> &stmt_id) const {
   return true;
 }
 
-bool Scattering::operator<=(const std::vector<int> &stmt_id) const {
+bool Relation::operator<=(const std::vector<int> &stmt_id) const {
   // check the branches of the AST
   for (int i = 0; i < stmt_id.size() && i * 2 < one.GetRowNum(); i++) {
     if (one.GetRowLast(i * 2) > stmt_id[i]) {
@@ -174,7 +174,7 @@ bool Scattering::operator<=(const std::vector<int> &stmt_id) const {
   return true;
 }
 
-bool Scattering::operator<(const std::vector<int> &stmt_id) const {
+bool Relation::operator<(const std::vector<int> &stmt_id) const {
   // corner cases, which corresponds to impossible
   if (stmt_id.empty()) {
     return false;

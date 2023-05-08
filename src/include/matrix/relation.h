@@ -2,9 +2,9 @@
 #include <osl/relation.h>
 #include <vector>
 
-class Scattering {
+class Relation {
 public:
-  Scattering(osl_relation_p ptr);
+  Relation(osl_relation_p ptr);
 
   void WriteBack();
 

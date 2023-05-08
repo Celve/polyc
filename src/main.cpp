@@ -15,7 +15,7 @@
 #include <osl/osl.h>
 
 #include <matrix/matrix.h>
-#include <matrix/scattering.h>
+#include <matrix/relation.h>
 #include <utils/osl_ext.h>
 #include <utils/osl_int.h>
 #include <utils/osl_statement.h>
@@ -36,7 +36,7 @@ int split(osl_scop_p scop, std::vector<int> statementID, unsigned int depth) {
 
   while (statement != nullptr) {
     auto scattering = statement->scattering;
-    auto mat = Scattering(scattering);
+    auto mat = Relation(scattering);
     if (mat == statementID) {
       mat.SetRowLast(target, mat.GetRowLast(target) + 1);
       mat.WriteBack();
@@ -66,7 +66,7 @@ int reorder(osl_scop_p scop, std::vector<int> statementID,
 
   while (statement != nullptr) {
     auto scattering = statement->scattering;
-    auto mat = Scattering(scattering);
+    auto mat = Relation(scattering);
     if (mat == statementID) {
       mat.SetRowLast(target, neworder[mat.GetRowLast(target)]);
       mat.WriteBack();
@@ -97,7 +97,7 @@ int interchange(osl_scop_p scop, std::vector<int> statementID,
   auto statement = NavigateToOslStmt(scop->statement, statementID);
 
   auto scattering = statement->scattering;
-  auto mat = Scattering(scattering);
+  auto mat = Relation(scattering);
   auto row_num = mat.GetRowNum();
   auto output = mat.GetOutput();
   output->SwapRows((depth_1 - 1) * 2 + 1, (depth_2 - 1) * 2 + 1);
@@ -122,7 +122,7 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
   if (statement != nullptr && statement->domain->nb_rows > 1) {
     while (statement != nullptr) {
       auto scattering = statement->scattering;
-      auto mat = Scattering(scattering);
+      auto mat = Relation(scattering);
       if (mat == statementID) {
         mat.SetRowLast(target, mat.GetRowLast(target) - 1);
         mat.WriteBack();
@@ -137,11 +137,24 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
   return 0;
 }
 
-// int skew(osl_scop_p scop,
-//          std::vector<int> statementID,
-//          unsigned int depth,
-//          unsigned int depth_other,
-//          int coeff) ;
+/**
+ * skew function
+ * Transform the iteration domain so that the loop at depth depends on the
+ * loop iterator at depth_other: in all occurrences, the loop iterator i
+ * of the former loop is replaced by (i + coeff*j) where j is the loop iterator
+ * of the latter loop.  Adjusts the loop boundaries accordingly.
+ * Skewing the loop by its own iterator, i.e. depth == depth_outer, is invalid
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * depth: 1-based depth of the output loop to modify
+ * depth_other: 1-based depth of the loop iterator to add
+ * coeff: the coefficient to multiply the dimension by
+ * return status
+ */
+int skew(osl_scop_p scop, std::vector<int> statementID, unsigned int depth,
+         unsigned int depth_other, int coeff) {
+  ;
+}
 
 /**
  * tile function:
@@ -157,7 +170,7 @@ int tile(osl_scop_p scop, std::vector<int> statementID, unsigned int depth,
          unsigned int depth_outer, unsigned int size) {
   // find the statement
   auto statement = NavigateToOslStmt(scop->statement, statementID);
-  auto matrix = Scattering(statement->scattering);
+  auto matrix = Relation(statement->scattering);
 
   // deal with appended columns
   auto output = matrix.GetOutput();
