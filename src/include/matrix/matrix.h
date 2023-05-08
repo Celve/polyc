@@ -1,3 +1,5 @@
+#pragma once
+
 #include <osl/macros.h>
 #include <osl/relation.h>
 #include <utils/osl_int.h>
@@ -64,5 +66,6 @@ public:
   ScatteringMatrix(osl_relation_p ptr) : Matrix(ptr) {}
   ScatteringMatrix(int row, int col) : Matrix(row, col) {}
 
+  bool operator==(std::vector<int> stmt_ids);
   bool operator<=(std::vector<int> stmt_ids);
 };

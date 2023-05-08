@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cassert>
 #include <gmp.h>
 #include <osl/int.h>

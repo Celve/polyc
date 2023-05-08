@@ -13,6 +13,7 @@
 
 #include <matrix/matrix.h>
 #include <utils/osl_int.h>
+#include <utils/osl_statement.h>
 
 // int split(osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
 // int reorder(osl_scop_p scop, std::vector<int> statementID, std::vector<int>
@@ -30,22 +31,20 @@
  */
 int fuse(osl_scop_p scop, std::vector<int> statementID) {
   // find the statement
-  auto stmt_id = statementID[0];
-  auto statement = scop->statement;
-  while (statement != nullptr &&
-         ScatteringMatrix(statement->scattering) <= statementID) {
-    statement = statement->next;
-  }
+  auto statement = NavigateOslStmt(scop->statement, statementID);
+  statementID.pop_back();
   if (statement != nullptr && statement->domain->nb_rows > 1) {
     while (statement != nullptr) {
       auto scattering = statement->scattering;
       auto row = scattering->nb_rows;
       auto column = scattering->nb_columns;
-      Matrix mat = Matrix(scattering);
-      if (mat.GetRowLast(0) != stmt_id) {
-        mat.SetRowLast(0, mat.GetData(0, column - 1) - 1);
+      auto mat = ScatteringMatrix(scattering);
+      if (mat == statementID) {
+        mat.SetRowLast(statementID.size() * 2, mat.GetData(0, column - 1) - 1);
+        mat.WriteBack(scattering);
+      } else {
+        break;
       }
-      mat.WriteBack(scattering);
 
       statement = statement->next;
     }

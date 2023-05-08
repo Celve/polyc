@@ -1,3 +1,5 @@
+#pragma once
+
 #include <matrix/matrix.h>
 #include <osl/relation.h>
 #include <utils/osl_int.h>
