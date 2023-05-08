@@ -153,7 +153,13 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
  */
 int skew(osl_scop_p scop, std::vector<int> statementID, unsigned int depth,
          unsigned int depth_other, int coeff) {
-  ;
+  auto scattering =
+      Relation(NavigateToOslStmt(scop->statement, statementID)->scattering);
+
+  scattering.SetData(depth * 2 - 1, depth_other * 2, -coeff);
+  scattering.WriteBack();
+
+  return 0;
 }
 
 /**
@@ -366,6 +372,15 @@ int main(int argc, char *argv[]) {
     auto size = std::stoi(args[3]);
 
     tile(scop, statement_id, depth, depth_outer, size);
+  } else if (op == "skew") {
+    auto statement_id =
+        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+    auto depth = std::stoi(args[1]);
+    auto depth_other = std::stoi(args[2]);
+    auto coeff = std::stoi(args[3]);
+
+    skew(scop, statement_id, depth, depth_other, coeff);
+    osl_scop_print(stdout, scop);
   }
 
   print_scop_to_c(stdout, scop);
