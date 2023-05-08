@@ -66,6 +66,7 @@ public:
   ScatteringMatrix(osl_relation_p ptr) : Matrix(ptr) {}
   ScatteringMatrix(int row, int col) : Matrix(row, col) {}
 
-  bool operator==(std::vector<int> stmt_ids);
+  bool operator<(std::vector<int> stmt_ids);
   bool operator<=(std::vector<int> stmt_ids);
+  bool operator==(std::vector<int> stmt_ids);
 };

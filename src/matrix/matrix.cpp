@@ -72,3 +72,19 @@ bool ScatteringMatrix::operator<=(std::vector<int> stmt_ids) {
 
   return true;
 }
+
+bool ScatteringMatrix::operator<(std::vector<int> stmt_ids) {
+  // corner cases, which corresponds to impossible
+  if (stmt_ids.empty()) {
+    return false;
+  }
+
+  // check the branches of the AST
+  for (int i = 0; i < stmt_ids.size() && i * 2 < GetRowNum(); i++) {
+    if (GetRowLast(i * 2) >= stmt_ids[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}

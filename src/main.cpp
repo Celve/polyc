@@ -1,5 +1,6 @@
 /* poc.cpp A complete C to polyhedra to C compiler */
 
+#include "utils/str.h"
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -16,11 +17,43 @@
 #include <utils/osl_statement.h>
 
 // int split(osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
-// int reorder(osl_scop_p scop, std::vector<int> statementID, std::vector<int>
-// neworder) ; int interchange(osl_scop_p scop,
-//                 std::vector<int> statementID,
-//                 unsigned int depth_1, unsigned int depth_2,
-//                 int pretty) ;
+
+/**
+ * reorder function:
+ * Reorders the statements in the loop
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * neworder: the new order of the statements
+ * return status
+ */
+int reorder(osl_scop_p scop, std::vector<int> statementID,
+            std::vector<int> neworder) {
+  // find the statment
+  auto statement = NavigateToOslStmt(scop->statement, statementID);
+  auto target = statementID.size() * 2;
+
+  while (statement != nullptr) {
+    auto scattering = statement->scattering;
+    auto row = scattering->nb_rows;
+    auto column = scattering->nb_columns;
+    auto mat = ScatteringMatrix(scattering);
+    if (mat == statementID) {
+      std::cout << "from: " << mat.GetRowLast(target) << " "
+                << neworder[mat.GetRowLast(target)] << std::endl;
+      mat.SetRowLast(target, neworder[mat.GetRowLast(target)]);
+      mat.WriteBack(scattering);
+    } else {
+      break;
+    }
+
+    statement = statement->next;
+  }
+
+  return 0;
+}
+
+// int interchange(osl_scop_p scop, std::vector<int> statementID,
+//                 unsigned int depth_1, unsigned int depth_2, int pretty);
 
 /**
  * fuse function:
@@ -31,9 +64,11 @@
  */
 int fuse(osl_scop_p scop, std::vector<int> statementID) {
   // find the statement
-  auto statement = NavigateOslStmt(scop->statement, statementID);
+  auto statement = NavigateAfterOslStmt(scop->statement, statementID);
   statementID.pop_back();
   auto target = statementID.size() * 2;
+
+  // do only when the next instruction is a loop
   if (statement != nullptr && statement->domain->nb_rows > 1) {
     while (statement != nullptr) {
       auto scattering = statement->scattering;
@@ -50,6 +85,7 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
       statement = statement->next;
     }
   }
+
   return 0;
 }
 
@@ -120,7 +156,8 @@ std::vector<std::string> split(const std::string &str) {
 
     if (c == ',' && inside_parenthesis == 0 && inside_brackets == 0) {
       result.push_back(curr);
-    } else {
+      curr.clear();
+    } else if (c != ' ') {
       curr += c;
     }
   }
@@ -162,7 +199,7 @@ int main(int argc, char *argv[]) {
 
   // find the correct location
   auto extension = scop->extension;
-  for (int i = 0; i < 3; i++) {
+  while (strcmp(extension->interface->URI, "clay")) {
     extension = extension->next;
   }
 
@@ -183,19 +220,16 @@ int main(int argc, char *argv[]) {
 
   if (op == "fuse") {
     // need further splitting
-    std::vector<std::string> fuse_strs =
-        split(args[0].substr(1, args[0].size() - 2));
-    std::vector<int> fuse_args;
-    for (auto fuse_str : fuse_strs) {
-      fuse_args.push_back(std::stoi(fuse_str));
-    }
+    auto statement_id =
+        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
 
-    // debug
-    for (auto arg : fuse_args) {
-      std::cout << arg << std::endl;
-    }
+    fuse(scop, statement_id);
+  } else if (op == "reorder") {
+    auto statement_id =
+        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+    auto neworder = ToVectorInt(split(args[1].substr(1, args[1].size() - 2)));
 
-    fuse(scop, fuse_args);
+    reorder(scop, statement_id, neworder);
   }
 
   print_scop_to_c(stdout, scop);
