@@ -38,8 +38,6 @@ int reorder(osl_scop_p scop, std::vector<int> statementID,
     auto column = scattering->nb_columns;
     auto mat = ScatteringMatrix(scattering);
     if (mat == statementID) {
-      std::cout << "from: " << mat.GetRowLast(target) << " "
-                << neworder[mat.GetRowLast(target)] << std::endl;
       mat.SetRowLast(target, neworder[mat.GetRowLast(target)]);
       mat.WriteBack(scattering);
     } else {
