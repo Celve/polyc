@@ -33,6 +33,7 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
   // find the statement
   auto statement = NavigateOslStmt(scop->statement, statementID);
   statementID.pop_back();
+  auto target = statementID.size() * 2;
   if (statement != nullptr && statement->domain->nb_rows > 1) {
     while (statement != nullptr) {
       auto scattering = statement->scattering;
@@ -40,7 +41,7 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
       auto column = scattering->nb_columns;
       auto mat = ScatteringMatrix(scattering);
       if (mat == statementID) {
-        mat.SetRowLast(statementID.size() * 2, mat.GetData(0, column - 1) - 1);
+        mat.SetRowLast(target, mat.GetRowLast(target) - 1);
         mat.WriteBack(scattering);
       } else {
         break;
@@ -101,15 +102,33 @@ std::string trim(std::string str) {
   return str;
 }
 
-std::vector<std::string> split(const std::string &str, char end) {
+std::vector<std::string> split(const std::string &str) {
   std::vector<std::string> result;
-  int curr = 1;
-  int next;
-  while ((next = str.find(',', curr)) != std::string::npos) {
-    result.push_back(trim(str.substr(curr, next - curr)));
-    curr = next + 1;
+  std::string curr;
+  auto inside_brackets = 0;
+  auto inside_parenthesis = 0;
+  for (auto c : str) {
+    if (c == '[') {
+      inside_brackets++;
+    } else if (c == '(') {
+      inside_parenthesis++;
+    } else if (c == ']') {
+      inside_brackets--;
+    } else if (c == ')') {
+      inside_parenthesis--;
+    }
+
+    if (c == ',' && inside_parenthesis == 0 && inside_brackets == 0) {
+      result.push_back(curr);
+    } else {
+      curr += c;
+    }
   }
-  result.push_back(trim(str.substr(curr, str.find(end) - curr)));
+
+  if (!curr.empty()) {
+    result.push_back(curr);
+  }
+
   return result;
 }
 
@@ -117,9 +136,10 @@ std::vector<std::string> split(const std::string &str, char end) {
 void parse(std::string &script, std::string &op,
            std::vector<std::string> &args) {
   script.erase(0, script.find_first_not_of(' '));
-  int curr = script.find('(');
-  op = script.substr(0, curr);
-  args = split(script.substr(curr, script.length() - curr - 2), ')');
+  int begin = script.find_first_of('(');
+  int end = script.find_last_of(')');
+  op = script.substr(0, begin);
+  args = split(script.substr(begin + 1, end - begin - 1));
 }
 
 int main(int argc, char *argv[]) {
@@ -163,7 +183,8 @@ int main(int argc, char *argv[]) {
 
   if (op == "fuse") {
     // need further splitting
-    std::vector<std::string> fuse_strs = split(args[0], ']');
+    std::vector<std::string> fuse_strs =
+        split(args[0].substr(1, args[0].size() - 2));
     std::vector<int> fuse_args;
     for (auto fuse_str : fuse_strs) {
       fuse_args.push_back(std::stoi(fuse_str));
