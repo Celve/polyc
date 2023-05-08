@@ -16,7 +16,35 @@
 #include <utils/osl_int.h>
 #include <utils/osl_statement.h>
 
-// int split(osl_scop_p scop, std::vector<int> statementID, unsigned int depth);
+/**
+ * split function:
+ * Split the loop into two parts at the depth-th level from the statement
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * depth
+ * return status
+ */
+int split(osl_scop_p scop, std::vector<int> statementID, unsigned int depth) {
+  // find the statement
+  auto statement = NavigateAfterOslStmt(scop->statement, statementID);
+  statementID.resize(depth - 1);
+  auto target = (depth - 1) * 2;
+
+  while (statement != nullptr) {
+    auto scattering = statement->scattering;
+    auto mat = ScatteringMatrix(scattering);
+    if (mat == statementID) {
+      mat.SetRowLast(target, mat.GetRowLast(target) + 1);
+      mat.WriteBack(scattering);
+    } else {
+      break;
+    }
+
+    statement = statement->next;
+  }
+
+  return 0;
+}
 
 /**
  * reorder function:
@@ -34,8 +62,6 @@ int reorder(osl_scop_p scop, std::vector<int> statementID,
 
   while (statement != nullptr) {
     auto scattering = statement->scattering;
-    auto row = scattering->nb_rows;
-    auto column = scattering->nb_columns;
     auto mat = ScatteringMatrix(scattering);
     if (mat == statementID) {
       mat.SetRowLast(target, neworder[mat.GetRowLast(target)]);
@@ -70,8 +96,6 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
   if (statement != nullptr && statement->domain->nb_rows > 1) {
     while (statement != nullptr) {
       auto scattering = statement->scattering;
-      auto row = scattering->nb_rows;
-      auto column = scattering->nb_columns;
       auto mat = ScatteringMatrix(scattering);
       if (mat == statementID) {
         mat.SetRowLast(target, mat.GetRowLast(target) - 1);
@@ -228,6 +252,12 @@ int main(int argc, char *argv[]) {
     auto neworder = ToVectorInt(split(args[1].substr(1, args[1].size() - 2)));
 
     reorder(scop, statement_id, neworder);
+  } else if (op == "split") {
+    auto statement_id =
+        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+    auto depth = std::stoi(args[1]);
+
+    split(scop, statement_id, depth);
   }
 
   print_scop_to_c(stdout, scop);
