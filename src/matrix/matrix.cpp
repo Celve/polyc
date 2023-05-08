@@ -41,9 +41,21 @@ void Matrix::SwapCols(int col1, int col2) {
   }
 }
 
+void Matrix::InsertEmptyRowAt(int pos) {
+  data.insert(data.begin() + pos, std::vector<int>(col_num, 0));
+  row_num++;
+}
+
 void Matrix::InsertRowAt(std::vector<int> row, int pos) {
   data.insert(data.begin() + pos, row);
   row_num++;
+}
+
+void Matrix::InsertEmptyColAt(int pos) {
+  for (int i = 0; i < row_num; i++) {
+    data[i].insert(data[i].begin() + pos, 0);
+  }
+  col_num++;
 }
 
 void Matrix::InsertColAt(std::vector<int> col, int pos) {

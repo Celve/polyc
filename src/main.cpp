@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <osl/extensions/scatnames.h>
+#include <osl/strings.h>
 #include <vector>
 
 #include <clan/clan.h>
@@ -14,6 +16,7 @@
 
 #include <matrix/matrix.h>
 #include <matrix/scattering.h>
+#include <utils/osl_ext.h>
 #include <utils/osl_int.h>
 #include <utils/osl_statement.h>
 
@@ -97,8 +100,6 @@ int interchange(osl_scop_p scop, std::vector<int> statementID,
   auto mat = Scattering(scattering);
   auto row_num = mat.GetRowNum();
   auto output = mat.GetOutput();
-  std::cout << "swap: " << (depth_1 - 1) * 2 + 1 << " " << (depth_2 - 1) * 2 + 1
-            << std::endl;
   output->SwapRows((depth_1 - 1) * 2 + 1, (depth_2 - 1) * 2 + 1);
   mat.WriteBack();
   return 0;
@@ -141,9 +142,65 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
 //          unsigned int depth,
 //          unsigned int depth_other,
 //          int coeff) ;
-// int tile(osl_scop_p scop,
-//          std::vector<int> statementID, unsigned int depth, unsigned int
-//          depth_outer, unsigned int size) ;
+
+/**
+ * tile function:
+ * Do tiling on the loop at depth with size, the outer loop is at depth_outer
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * depth: tiling on loop at depth
+ * depth_outer: outer loop depth
+ * size: tiling size
+ * return status
+ */
+int tile(osl_scop_p scop, std::vector<int> statementID, unsigned int depth,
+         unsigned int depth_outer, unsigned int size) {
+  // find the statement
+  auto statement = NavigateToOslStmt(scop->statement, statementID);
+  auto matrix = Scattering(statement->scattering);
+
+  // deal with appended columns
+  auto output = matrix.GetOutput();
+  output->SwapCols(depth_outer * 2 - 1, depth_outer * 2);
+  output->InsertEmptyColAt(depth_outer * 2 - 1);
+  output->InsertEmptyColAt(depth_outer * 2 + 2);
+
+  // deal with appended rows
+  matrix.InsertEmptyRowAt(depth_outer * 2 + 1);
+  matrix.InsertEmptyRowAt(depth_outer * 2 + 2);
+  matrix.InsertEmptyRowAt(depth_outer * 2 + 3);
+
+  // make it inequality
+  auto ei = matrix.GetEi();
+  ei->SetRowLast(depth_outer * 2 + 1, 1);
+  ei->SetRowLast(depth_outer * 2 + 2, 1);
+
+  // set its relation with loop in depth
+  output->SetData(depth_outer * 2 + 1, depth_outer * 2 - 1, -size);
+  output->SetData(depth_outer * 2 + 2, depth_outer * 2 - 1, size);
+  output->SetData(depth_outer * 2 + 1, depth * 2 + 1, 1);
+  output->SetData(depth_outer * 2 + 2, depth * 2 + 1, -1);
+  output->SetData(depth_outer * 2 + 3, depth_outer * 2 + 2, -1);
+
+  auto one = matrix.GetOne();
+  one->SetRowLast(depth_outer * 2 + 2, size - 1);
+
+  // write back
+  matrix.WriteBack();
+
+  // one more thing about scatname
+  auto ext = FindExt(scop, "scatnames");
+  auto scatnames = reinterpret_cast<osl_scatnames *>(ext->data);
+  auto names = osl::osl_strings_to_cpp(scatnames->names);
+  osl_strings_free(scatnames->names);
+  auto symbol = names[depth * 2 - 1];
+  names.insert(names.begin() + depth_outer * 2 - 1, "b_outer");
+  names.insert(names.begin() + depth_outer * 2 - 1, symbol + "_outer");
+  scatnames->names = ToOslStrings(names);
+
+  return 0;
+}
+
 // int unroll(osl_scop_p scop, std::vector<int> statementID, unsigned int
 // factor) ;
 
@@ -245,10 +302,7 @@ int main(int argc, char *argv[]) {
   osl_scop_print(stdout, scop);
 
   // find the correct location
-  auto extension = scop->extension;
-  while (strcmp(extension->interface->URI, "clay")) {
-    extension = extension->next;
-  }
+  auto extension = FindExt(scop, "clay");
 
   // extract the script
   auto clay = reinterpret_cast<osl_clay *>(extension->data);
@@ -291,6 +345,14 @@ int main(int argc, char *argv[]) {
     auto pretty = std::stoi(args[3]);
 
     interchange(scop, statement_id, depth1, depth2, pretty);
+  } else if (op == "tile") {
+    auto statement_id =
+        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+    auto depth = std::stoi(args[1]);
+    auto depth_outer = std::stoi(args[2]);
+    auto size = std::stoi(args[3]);
+
+    tile(scop, statement_id, depth, depth_outer, size);
   }
 
   print_scop_to_c(stdout, scop);

@@ -15,6 +15,8 @@ public:
   int GetRowLast(int row);
   void SetRowLast(int row, int value);
 
+  void InsertEmptyRowAt(int pos);
+
   Matrix *GetEi() { return &ei; }
   Matrix *GetOutput() { return &output; }
   Matrix *GetParam() { return &param; }

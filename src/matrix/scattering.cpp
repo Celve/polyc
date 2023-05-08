@@ -141,6 +141,15 @@ int Scattering::GetRowLast(int row) { return one.GetRowLast(row); }
 
 void Scattering::SetRowLast(int row, int value) { one.SetRowLast(row, value); }
 
+void Scattering::InsertEmptyRowAt(int pos) {
+  ei.InsertEmptyRowAt(pos);
+  output.InsertEmptyRowAt(pos);
+  param.InsertEmptyRowAt(pos);
+  input.InsertEmptyRowAt(pos);
+  one.InsertEmptyRowAt(pos);
+  row_num++;
+}
+
 bool Scattering::operator==(const std::vector<int> &stmt_id) const {
   // check the branches of the AST
   for (int i = 0; i < stmt_id.size() && i * 2 < one.GetRowNum(); i++) {

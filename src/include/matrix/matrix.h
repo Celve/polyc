@@ -54,12 +54,26 @@ public:
   void SwapCols(int col1, int col2);
 
   /**
+   * @brief Insert an empty row at pos
+   *
+   * @param pos
+   */
+  void InsertEmptyRowAt(int pos);
+
+  /**
    * @brief Insert a row at pos
    *
    * @param row
    * @param pos
    */
   void InsertRowAt(std::vector<int> row, int pos);
+
+  /**
+   * @brief Insert an empty column at pos
+   *
+   * @param pos
+   */
+  void InsertEmptyColAt(int pos);
 
   /**
    * @brief Insert a column at pos
