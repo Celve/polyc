@@ -76,8 +76,33 @@ int reorder(osl_scop_p scop, std::vector<int> statementID,
   return 0;
 }
 
-// int interchange(osl_scop_p scop, std::vector<int> statementID,
-//                 unsigned int depth_1, unsigned int depth_2, int pretty);
+/**
+ * interchange function:
+ * On each statement which belongs to the node, the loops that match the
+ * depth_1-th and the depth_2 are interchanged
+ * given the inner loop
+ * scop: the SCoP to be transformed
+ * statementID: the statement scattering ID on AST
+ * depth_1, depth_2: >= 1
+ * pretty: 1 or 0 : whether update the scatnames
+ * return status
+ */
+int interchange(osl_scop_p scop, std::vector<int> statementID,
+                unsigned int depth_1, unsigned int depth_2, int pretty) {
+  // find the statement
+  auto statement = NavigateToOslStmt(scop->statement, statementID);
+
+  auto scattering = statement->scattering;
+  auto mat = ScatteringMatrix(scattering);
+  auto row_num = mat.GetRowNum();
+  auto pha = mat.SubPhantom(0, row_num, 1, 1 + row_num);
+  std::cout << "swap: " << (depth_1 - 1) * 2 + 1 << " " << (depth_2 - 1) * 2 + 1
+            << std::endl;
+  pha.SwapRows((depth_1 - 1) * 2 + 1, (depth_2 - 1) * 2 + 1);
+  pha.WriteBack();
+  mat.WriteBack(scattering);
+  return 0;
+}
 
 /**
  * fuse function:
@@ -258,6 +283,14 @@ int main(int argc, char *argv[]) {
     auto depth = std::stoi(args[1]);
 
     split(scop, statement_id, depth);
+  } else if (op == "interchange") {
+    auto statement_id =
+        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+    auto depth1 = std::stoi(args[1]);
+    auto depth2 = std::stoi(args[2]);
+    auto pretty = std::stoi(args[3]);
+
+    interchange(scop, statement_id, depth1, depth2, pretty);
   }
 
   print_scop_to_c(stdout, scop);
