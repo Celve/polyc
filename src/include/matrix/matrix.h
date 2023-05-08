@@ -37,6 +37,38 @@ public:
 
   void WriteBack(osl_relation_p ptr);
 
+  /**
+   * @brief Swap two rows
+   *
+   * @param row1
+   * @param row2
+   */
+  void SwapRows(int row1, int row2);
+
+  /**
+   * @brief Swap two columns
+   *
+   * @param col1
+   * @param col2
+   */
+  void SwapCols(int col1, int col2);
+
+  /**
+   * @brief Insert a row at pos
+   *
+   * @param row
+   * @param pos
+   */
+  void InsertRowAt(std::vector<int> row, int pos);
+
+  /**
+   * @brief Insert a column at pos
+   *
+   * @param col
+   * @param pos
+   */
+  void InsertColAt(std::vector<int> col, int pos);
+
   int GetData(int i, int j) const { return data[i][j]; }
 
   void SetData(int i, int j, int value) { data[i][j] = value; }
@@ -61,51 +93,4 @@ private:
   int row_num;
   int col_num;
   std::vector<std::vector<int>> data;
-};
-
-class ScatteringMatrix : public Matrix {
-public:
-  ScatteringMatrix(osl_relation_p ptr) : Matrix(ptr) {}
-  ScatteringMatrix(int row, int col) : Matrix(row, col) {}
-
-  bool operator<(std::vector<int> stmt_ids);
-  bool operator<=(std::vector<int> stmt_ids);
-  bool operator==(std::vector<int> stmt_ids);
-};
-
-class Phantom : public Matrix {
-public:
-  /**
-   * @brief Construct a new Phantom object
-   *
-   * @param mat
-   */
-  Phantom(Matrix *mat, int row_start, int row_end, int col_start, int col_end);
-
-  /**
-   * @brief Swap two rows
-   *
-   * @param row1
-   * @param row2
-   */
-  void SwapRows(int row1, int row2);
-
-  /**
-   * @brief Swap two columns
-   *
-   * @param col1
-   * @param col2
-   */
-  void SwapCols(int col1, int col2);
-
-  /**
-   * @brief Write back the Phantom to the original Matrix
-   *
-   */
-  void WriteBack();
-
-private:
-  int row_start;
-  int col_start;
-  Matrix *mat;
 };

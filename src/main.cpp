@@ -13,6 +13,7 @@
 #include <osl/osl.h>
 
 #include <matrix/matrix.h>
+#include <matrix/scattering.h>
 #include <utils/osl_int.h>
 #include <utils/osl_statement.h>
 
@@ -32,10 +33,10 @@ int split(osl_scop_p scop, std::vector<int> statementID, unsigned int depth) {
 
   while (statement != nullptr) {
     auto scattering = statement->scattering;
-    auto mat = ScatteringMatrix(scattering);
+    auto mat = Scattering(scattering);
     if (mat == statementID) {
       mat.SetRowLast(target, mat.GetRowLast(target) + 1);
-      mat.WriteBack(scattering);
+      mat.WriteBack();
     } else {
       break;
     }
@@ -62,10 +63,10 @@ int reorder(osl_scop_p scop, std::vector<int> statementID,
 
   while (statement != nullptr) {
     auto scattering = statement->scattering;
-    auto mat = ScatteringMatrix(scattering);
+    auto mat = Scattering(scattering);
     if (mat == statementID) {
       mat.SetRowLast(target, neworder[mat.GetRowLast(target)]);
-      mat.WriteBack(scattering);
+      mat.WriteBack();
     } else {
       break;
     }
@@ -93,14 +94,13 @@ int interchange(osl_scop_p scop, std::vector<int> statementID,
   auto statement = NavigateToOslStmt(scop->statement, statementID);
 
   auto scattering = statement->scattering;
-  auto mat = ScatteringMatrix(scattering);
+  auto mat = Scattering(scattering);
   auto row_num = mat.GetRowNum();
-  auto pha = mat.SubPhantom(0, row_num, 1, 1 + row_num);
+  auto output = mat.GetOutput();
   std::cout << "swap: " << (depth_1 - 1) * 2 + 1 << " " << (depth_2 - 1) * 2 + 1
             << std::endl;
-  pha.SwapRows((depth_1 - 1) * 2 + 1, (depth_2 - 1) * 2 + 1);
-  pha.WriteBack();
-  mat.WriteBack(scattering);
+  output->SwapRows((depth_1 - 1) * 2 + 1, (depth_2 - 1) * 2 + 1);
+  mat.WriteBack();
   return 0;
 }
 
@@ -121,10 +121,10 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
   if (statement != nullptr && statement->domain->nb_rows > 1) {
     while (statement != nullptr) {
       auto scattering = statement->scattering;
-      auto mat = ScatteringMatrix(scattering);
+      auto mat = Scattering(scattering);
       if (mat == statementID) {
         mat.SetRowLast(target, mat.GetRowLast(target) - 1);
-        mat.WriteBack(scattering);
+        mat.WriteBack();
       } else {
         break;
       }
