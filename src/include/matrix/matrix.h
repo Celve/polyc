@@ -45,9 +45,9 @@ public:
 
   void SetColLast(int j, int value) { data[row - 1][j] = value; }
 
-  int GetRow() const { return row; }
+  int GetRowNum() const { return row; }
 
-  int GetCol() const { return col; }
+  int GetColNum() const { return col; }
 
   bool operator==(const Matrix &other) const;
 
@@ -57,4 +57,12 @@ private:
   int row;
   int col;
   std::vector<std::vector<int>> data;
+};
+
+class ScatteringMatrix : public Matrix {
+public:
+  ScatteringMatrix(osl_relation_p ptr) : Matrix(ptr) {}
+  ScatteringMatrix(int row, int col) : Matrix(row, col) {}
+
+  bool operator<=(std::vector<int> stmt_ids);
 };

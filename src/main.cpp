@@ -33,7 +33,7 @@ int fuse(osl_scop_p scop, std::vector<int> statementID) {
   auto stmt_id = statementID[0];
   auto statement = scop->statement;
   while (statement != nullptr &&
-         Matrix(statement->scattering).GetRowLast(0) <= stmt_id) {
+         ScatteringMatrix(statement->scattering) <= statementID) {
     statement = statement->next;
   }
   if (statement != nullptr && statement->domain->nb_rows > 1) {

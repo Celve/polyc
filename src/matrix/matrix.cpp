@@ -48,3 +48,14 @@ bool Matrix::operator==(const Matrix &other) const {
         return false;
   return true;
 }
+
+bool ScatteringMatrix::operator<=(std::vector<int> stmt_ids) {
+  // check the branches of the AST
+  for (int i = 0; i < stmt_ids.size() && i * 2 < GetRowNum(); i++) {
+    if (GetRowLast(i * 2) > stmt_ids[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
