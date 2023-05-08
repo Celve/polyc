@@ -8,7 +8,7 @@ Matrix::Matrix(osl_relation_p ptr) {
   for (int i = 0; i < row; i++) {
     data[i].resize(col);
     for (int j = 0; j < col; j++) {
-      data[i][j] = osl_int_read(ptr->m[i][j], ptr->precision);
+      data[i][j] = OslIntRead(ptr->m[i][j], ptr->precision);
     }
   }
 }
@@ -35,7 +35,7 @@ Matrix Matrix::SubMatrix(int row_start, int row_end, int col_start,
 void Matrix::WriteBack(osl_relation_p ptr) {
   for (int i = 0; i < row; i++) {
     for (int j = 0; j < col; j++)
-      osl_int_write(ptr->m[i][j], data[i][j], ptr->precision);
+      OslIntWrite(ptr->m[i][j], data[i][j], ptr->precision);
   }
 }
 
