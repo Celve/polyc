@@ -254,44 +254,6 @@ void print_scop_to_c(FILE *output, osl_scop_p scop) {
   cloog_state_free(state); // the input is freed inside
 }
 
-// Remove leading zeros and trailing zeros
-std::string trim(std::string str) {
-  str.erase(0, str.find_first_not_of(' '));
-  str.erase(str.find_last_not_of(' ') + 1);
-  return str;
-}
-
-std::vector<std::string> split(const std::string &str) {
-  std::vector<std::string> result;
-  std::string curr;
-  auto inside_brackets = 0;
-  auto inside_parenthesis = 0;
-  for (auto c : str) {
-    if (c == '[') {
-      inside_brackets++;
-    } else if (c == '(') {
-      inside_parenthesis++;
-    } else if (c == ']') {
-      inside_brackets--;
-    } else if (c == ')') {
-      inside_parenthesis--;
-    }
-
-    if (c == ',' && inside_parenthesis == 0 && inside_brackets == 0) {
-      result.push_back(curr);
-      curr.clear();
-    } else if (c != ' ') {
-      curr += c;
-    }
-  }
-
-  if (!curr.empty()) {
-    result.push_back(curr);
-  }
-
-  return result;
-}
-
 /// Script is organized during processing.
 void parse(std::string &script, std::string &op,
            std::vector<std::string> &args) {
@@ -299,7 +261,7 @@ void parse(std::string &script, std::string &op,
   int begin = script.find_first_of('(');
   int end = script.find_last_of(')');
   op = script.substr(0, begin);
-  args = split(script.substr(begin + 1, end - begin - 1));
+  args = SplitByDelimiter(script.substr(begin + 1, end - begin - 1));
 }
 
 int main(int argc, char *argv[]) {
@@ -332,33 +294,27 @@ int main(int argc, char *argv[]) {
   std::vector<std::string> args;
   parse(script, op, args);
 
-  // debug
-  std::cout << op << std::endl;
-  for (auto arg : args) {
-    std::cout << arg << std::endl;
-  }
-
   if (op == "fuse") {
     // need further splitting
     auto statement_id =
-        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+        ToVectorInt(SplitByDelimiter(RemovePeripheral(args[0])));
 
     fuse(scop, statement_id);
   } else if (op == "reorder") {
     auto statement_id =
-        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
-    auto neworder = ToVectorInt(split(args[1].substr(1, args[1].size() - 2)));
+        ToVectorInt(SplitByDelimiter(RemovePeripheral(args[0])));
+    auto neworder = ToVectorInt(SplitByDelimiter(RemovePeripheral(args[1])));
 
     reorder(scop, statement_id, neworder);
   } else if (op == "split") {
     auto statement_id =
-        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+        ToVectorInt(SplitByDelimiter(RemovePeripheral(args[0])));
     auto depth = std::stoi(args[1]);
 
     split(scop, statement_id, depth);
   } else if (op == "interchange") {
     auto statement_id =
-        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+        ToVectorInt(SplitByDelimiter(RemovePeripheral(args[0])));
     auto depth1 = std::stoi(args[1]);
     auto depth2 = std::stoi(args[2]);
     auto pretty = std::stoi(args[3]);
@@ -366,7 +322,7 @@ int main(int argc, char *argv[]) {
     interchange(scop, statement_id, depth1, depth2, pretty);
   } else if (op == "tile") {
     auto statement_id =
-        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+        ToVectorInt(SplitByDelimiter(RemovePeripheral(args[0])));
     auto depth = std::stoi(args[1]);
     auto depth_outer = std::stoi(args[2]);
     auto size = std::stoi(args[3]);
@@ -374,7 +330,7 @@ int main(int argc, char *argv[]) {
     tile(scop, statement_id, depth, depth_outer, size);
   } else if (op == "skew") {
     auto statement_id =
-        ToVectorInt(split(args[0].substr(1, args[0].size() - 2)));
+        ToVectorInt(SplitByDelimiter(RemovePeripheral(args[0])));
     auto depth = std::stoi(args[1]);
     auto depth_other = std::stoi(args[2]);
     auto coeff = std::stoi(args[3]);
