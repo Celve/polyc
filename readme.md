@@ -8,6 +8,8 @@ The bold part is what this project does. It takes the output of candl and transf
 
 ## Run
 
+### CMake
+
 ```bash
 cmake -B build
 cmake --build build
@@ -20,3 +22,15 @@ For example,
 ```
 
 To see how it fuse two loops inside the `test/fuse/fuse.c`. 
+
+### Makefile
+
+Or make the existing Makefile instead.
+```bash
+make run FILE=<filename>
+```
+
+For example, 
+```bash
+make run FILE=test/fuse/fuse.c
+```
